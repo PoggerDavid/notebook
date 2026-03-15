@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg-0:#06070a;--bg-1:#0c0d12;--bg-2:#131520;--bg-3:#1a1c28;--bg-hover:#1e2030;--border:#1a1c28;--border-l:#272a3a;--tx-1:#e2e4ec;--tx-2:#9499b0;--tx-3:#5a5f78;--red:#e84040;--red-dim:rgba(232,64,64,0.1);--green:#3ddc84;--font:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;--mono:'JetBrains Mono',monospace;--r-sm:8px;--r-md:12px;--r-lg:16px;--ease:0.2s cubic-bezier(0.25,0.46,0.45,0.94)}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:var(--font);background:var(--bg-0);color:var(--tx-1);-webkit-font-smoothing:antialiased;overflow:hidden}
+::selection{background:var(--red-dim);color:var(--red)}
+input,textarea,select{font-family:inherit}
+button{font-family:var(--font);font-size:13px;line-height:1.4;color:var(--tx-1);background:transparent;border:none;padding:0;margin:0;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border-l);border-radius:10px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 16px;border-radius:var(--r-sm);font-size:12px;font-weight:500;transition:var(--ease);white-space:nowrap}
+.btn-ghost{background:var(--bg-3);border:1px solid var(--border-l);color:var(--tx-2)}.btn-ghost:hover{border-color:var(--tx-3);color:var(--tx-1)}
+.btn-danger{background:var(--red-dim);border:1px solid rgba(232,64,64,0.25);color:var(--red)}.btn-danger:hover{background:rgba(232,64,64,0.2);border-color:rgba(232,64,64,0.4)}
+.btn-primary{background:var(--red);border:1px solid var(--red);color:#fff;font-weight:600}.btn-primary:hover{background:#f05050}.btn-primary:disabled{background:var(--bg-3);border-color:var(--border-l);color:var(--tx-3);cursor:not-allowed}
+
+/* ═══ PIN SCREEN ═══ */
+#pinScreen{position:fixed;inset:0;background:var(--bg-0);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:24px}
+#pinScreen.hidden{display:none}
+.pin-box{text-align:center}
+.pin-box .logo-big{width:56px;height:56px;background:var(--red);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:26px;color:#fff;margin:0 auto 16px}
+.pin-box h2{font-size:20px;font-weight:600;margin-bottom:6px}
+.pin-box p{font-size:13px;color:var(--tx-3);margin-bottom:24px}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin-bottom:24px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border-l);transition:var(--ease)}
+.pin-dot.filled{background:var(--red);border-color:var(--red)}
+.pin-dot.wrong{border-color:var(--red);animation:shake 0.4s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-pad{display:grid;grid-template-columns:repeat(3,64px);gap:10px;justify-content:center}
+.pin-key{width:64px;height:52px;background:var(--bg-2);border:1px solid var(--border-l);border-radius:var(--r-md);font-size:20px;font-weight:500;display:flex;align-items:center;justify-content:center;transition:var(--ease)}
+.pin-key:hover{background:var(--bg-3);border-color:var(--tx-3)}
+.pin-key:active{transform:scale(0.95)}
+.pin-key.fn{font-size:12px;color:var(--tx-3)}
+
+/* ═══ LAYOUT ═══ */
+#app{display:flex;height:100vh;width:100vw}
+#app.hidden{display:none}
+
+#navPanel{width:240px;min-width:240px;background:var(--bg-1);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.nav-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.nav-header .logo{width:28px;height:28px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0}
+.nav-header h1{font-size:15px;font-weight:600;letter-spacing:-0.3px;flex:1}
+.gear-btn{color:var(--tx-3);font-size:18px;padding:4px;border-radius:var(--r-sm);transition:var(--ease)}.gear-btn:hover{color:var(--tx-2);background:var(--bg-hover)}
+.nav-list{flex:1;overflow-y:auto;padding:8px}
+.nav-item{padding:10px 12px;border-radius:var(--r-md);cursor:pointer;margin-bottom:2px;transition:var(--ease);display:flex;align-items:center;gap:10px}
+.nav-item:hover{background:var(--bg-hover)}.nav-item.active{background:var(--bg-3)}
+.ni-icon{font-size:16px;opacity:0.5}.ni-title{font-size:13px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ni-count{font-size:11px;color:var(--tx-3);background:var(--bg-2);padding:2px 7px;border-radius:10px}
+.ni-del{opacity:0;color:var(--tx-3);font-size:13px;padding:2px 5px;border-radius:4px;transition:var(--ease)}.nav-item:hover .ni-del{opacity:1}.ni-del:hover{color:var(--red)!important;background:var(--red-dim)}
+.nav-footer{padding:12px;border-top:1px solid var(--border)}
+.new-nb-btn{width:100%;background:var(--bg-3);border:1px dashed var(--border-l);border-radius:var(--r-md);padding:10px;color:var(--tx-2);font-weight:500;transition:var(--ease)}.new-nb-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+.no-nb{text-align:center;padding:40px 16px;color:var(--tx-3);font-size:13px}
+
+#mainPanel{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid var(--border);gap:10px;min-height:52px}
+.mob-toggle{display:none;color:var(--tx-2);font-size:20px;padding:4px;border-radius:var(--r-sm)}
+.topbar-title{font-size:14px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-actions{display:flex;gap:6px}
+
+.sources-strip{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;overflow-x:auto;background:var(--bg-1);flex-shrink:0}.sources-strip::-webkit-scrollbar{height:3px}
+.source-chip{display:flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--border-l);border-radius:var(--r-md);padding:6px 10px 6px 6px;flex-shrink:0;transition:var(--ease)}.source-chip:hover{border-color:var(--tx-3)}
+.source-chip img{width:40px;height:28px;border-radius:5px;object-fit:cover;background:var(--bg-3)}
+.sc-info{min-width:0}.sc-title{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}.sc-meta{font-size:10px;color:var(--tx-3)}
+.sc-del{color:var(--tx-3);font-size:12px;padding:2px 4px;border-radius:4px;transition:var(--ease);margin-left:2px}.sc-del:hover{color:var(--red)!important;background:var(--red-dim)}
+.add-chip{display:flex;align-items:center;gap:6px;border:1px dashed var(--border-l);border-radius:var(--r-md);padding:8px 14px;color:var(--tx-3);font-size:12px;font-weight:500;flex-shrink:0;transition:var(--ease)}.add-chip:hover{border-color:var(--red);color:var(--red)}
+
+.chat-wrap{flex:1;display:flex;flex-direction:column;min-height:0}
+.chat-area{flex:1;overflow-y:auto;padding:24px}.chat-messages{max-width:720px;margin:0 auto}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px}
+.empty-state .big-icon{font-size:48px;margin-bottom:16px;opacity:0.2}.empty-state h2{font-size:20px;font-weight:600;margin-bottom:8px}.empty-state p{color:var(--tx-3);font-size:13px;max-width:360px;line-height:1.6}
+.quick-actions{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;justify-content:center}
+.quick-actions button{background:var(--bg-2);border:1px solid var(--border);color:var(--tx-2);border-radius:20px;padding:8px 16px;font-size:12px;transition:var(--ease)}.quick-actions button:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+
+.message{margin-bottom:24px;animation:msgIn 0.3s ease}@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.message-user{display:flex;justify-content:flex-end}.message-user .msg-bubble{background:var(--bg-3);border:1px solid var(--border-l);border-radius:var(--r-lg) var(--r-lg) 4px var(--r-lg);padding:10px 14px;max-width:80%;font-size:13px;line-height:1.6}
+.msg-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--red);margin-bottom:6px}
+.message-ai .msg-content{font-size:13.5px;line-height:1.75}.message-ai .msg-content p{margin-bottom:10px}.message-ai .msg-content p:last-child{margin-bottom:0}.message-ai .msg-content strong{font-weight:600}.message-ai .msg-content ul,.message-ai .msg-content ol{padding-left:18px;margin-bottom:10px}.message-ai .msg-content li{margin-bottom:3px}.message-ai .msg-content code{font-family:var(--mono);background:var(--bg-3);padding:1px 5px;border-radius:4px;font-size:12px}
+.typing-indicator{display:flex;gap:4px;padding:8px 0}.typing-indicator span{width:6px;height:6px;background:var(--tx-3);border-radius:50%;animation:bounce 1.2s ease-in-out infinite}.typing-indicator span:nth-child(2){animation-delay:0.15s}.typing-indicator span:nth-child(3){animation-delay:0.3s}@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-5px);opacity:1}}
+
+.input-bar{padding:12px 20px 16px;border-top:1px solid var(--border);background:var(--bg-0)}
+.input-inner{max-width:720px;margin:0 auto;display:flex;gap:8px;align-items:flex-end}
+.input-bar textarea{flex:1;background:var(--bg-1);border:1px solid var(--border-l);border-radius:var(--r-md);padding:11px 14px;color:var(--tx-1);font-size:13px;line-height:1.5;resize:none;outline:none;min-height:44px;max-height:150px;transition:var(--ease);font-family:var(--font)}.input-bar textarea:focus{border-color:var(--red)}.input-bar textarea::placeholder{color:var(--tx-3)}
+.send-btn{background:var(--red);color:#fff;width:44px;height:44px;border-radius:var(--r-md);font-size:17px;display:flex;align-items:center;justify-content:center;transition:var(--ease);flex-shrink:0}.send-btn:hover{background:#f05050;transform:translateY(-1px)}.send-btn:disabled{background:var(--bg-3)!important;color:var(--tx-3)!important;cursor:not-allowed;transform:none}
+.status-bar{padding:5px 20px;font-size:11px;color:var(--tx-3);border-top:1px solid var(--border);display:flex;justify-content:space-between}.status-dot{width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px}
+.sync-indicator{color:var(--green);opacity:0;transition:opacity 0.3s}.sync-indicator.show{opacity:1}
+
+/* Modals */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity 0.2s}.overlay.show{opacity:1;pointer-events:auto}
+.modal-box{background:var(--bg-2);border:1px solid var(--border-l);border-radius:20px;padding:24px;width:90%;transform:scale(0.95);transition:transform 0.2s}.overlay.show .modal-box{transform:scale(1)}.modal-box.sm{max-width:360px}.modal-box.md{max-width:460px}
+.modal-box h3{font-size:17px;font-weight:600;margin-bottom:6px}.modal-box .subtitle{font-size:13px;color:var(--tx-3);margin-bottom:16px}
+.modal-box label{display:block;font-size:11px;font-weight:600;color:var(--tx-2);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px}
+.m-input{width:100%;background:var(--bg-3);border:1px solid var(--border-l);border-radius:var(--r-sm);padding:10px 12px;color:var(--tx-1);font-size:13px;outline:none;transition:var(--ease);margin-bottom:14px;font-family:var(--font)}.m-input:focus{border-color:var(--red)}.m-input::placeholder{color:var(--tx-3)}
+select.m-input{cursor:pointer;-webkit-appearance:none;appearance:none}
+textarea.m-input{min-height:100px;resize:vertical;line-height:1.6;font-size:12px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.paste-toggle{font-size:12px;color:var(--tx-3);display:inline-flex;align-items:center;gap:4px;margin-bottom:12px;transition:var(--ease)}.paste-toggle:hover{color:var(--tx-2)}
+.paste-area{display:none;margin-bottom:12px}.paste-area.show{display:block}.paste-hint{font-size:11px;color:var(--tx-3);margin-top:6px}
+.fetch-status{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--red-dim);border:1px solid rgba(232,64,64,0.15);border-radius:var(--r-md);font-size:13px;color:var(--red);margin-top:12px}
+.spinner{width:14px;height:14px;border:2px solid rgba(232,64,64,0.3);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0}@keyframes spin{to{transform:rotate(360deg)}}
+
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.15s}.confirm-overlay.show{opacity:1;pointer-events:auto}
+.confirm-box{background:var(--bg-2);border:1px solid var(--border-l);border-radius:16px;padding:24px;width:90%;max-width:340px;text-align:center}
+.confirm-box p{font-size:14px;margin-bottom:20px;line-height:1.5;color:var(--tx-2)}.confirm-actions{display:flex;gap:8px;justify-content:center}
+
+@media(max-width:768px){
+  #navPanel{position:fixed;top:0;left:0;bottom:0;z-index:50;width:80%;max-width:280px;transform:translateX(-100%);transition:transform 0.3s}
+  #navPanel.open{transform:translateX(0)}.mob-toggle{display:flex!important}
+  .mob-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:40;opacity:0;pointer-events:none;transition:opacity 0.3s}.mob-backdrop.show{opacity:1;pointer-events:auto}
+  .sources-strip{padding:10px 14px}.chat-area{padding:16px}.input-bar{padding:10px 14px 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+  PIN SCREEN
+  ═══════════════════════════════════════ -->
+<div id="pinScreen">
+  <div class="pin-box">
+    <div class="logo-big">N</div>
+    <h2>Notebook</h2>
+    <p>Enter your PIN</p>
+    <div class="pin-dots" id="pinDots"></div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key fn" onclick="pinClear()">CLR</button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key fn" onclick="pinSubmit()">GO</button>
+    </div>
+  </div>
+</div>
+
+<div class="mob-backdrop" id="mobBackdrop" onclick="toggleNav()"></div>
+<div class="confirm-overlay" id="confirmOverlay"><div class="confirm-box"><p id="confirmMsg">Are you sure?</p><div class="confirm-actions"><button class="btn btn-ghost" onclick="confirmResolve(false)">Cancel</button><button class="btn btn-danger" id="confirmActionBtn" onclick="confirmResolve(true)">Delete</button></div></div></div>
+
+<div id="app" class="hidden">
+<nav id="navPanel">
+  <div class="nav-header"><div class="logo">N</div><h1>Notebook</h1><button class="gear-btn" onclick="openSettings()">⚙</button></div>
+  <div class="nav-list" id="navList"></div>
+  <div class="nav-footer"><button class="new-nb-btn" onclick="createNotebook()">+ New Notebook</button></div>
+</nav>
+<main id="mainPanel">
+  <div class="topbar"><button class="mob-toggle" onclick="toggleNav()">☰</button><div class="topbar-title" id="topbarTitle">Create a notebook to begin</div><div class="topbar-actions" id="topbarActions"></div></div>
+  <div class="sources-strip" id="sourcesStrip" style="display:none"></div>
+  <div class="chat-wrap">
+    <div class="chat-area" id="chatArea"><div class="chat-messages" id="chatMessages"><div class="empty-state"><div class="big-icon">📓</div><h2>YouTube Notebook</h2><p>Create a notebook, add YouTube videos, and chat with all of them at once.</p></div></div></div>
+    <div class="input-bar" id="inputBar" style="display:none"><div class="input-inner"><textarea id="chatInput" placeholder="Ask about your sources..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea><button class="send-btn" id="sendBtn" onclick="sendMessage()">↑</button></div></div>
+    <div class="status-bar"><span><span class="status-dot"></span>Ready <span class="sync-indicator" id="syncIndicator">· synced</span></span><span id="tokenInfo"></span></div>
+  </div>
+</main>
+</div>
+
+<!-- ADD SOURCE -->
+<div class="overlay" id="addModal"><div class="modal-box md">
+  <h3>Add YouTube Source</h3>
+  <div class="subtitle">Gemini extracts the transcript directly from the video.</div>
+  <input class="m-input" id="addUrlInput" placeholder="https://youtube.com/watch?v=..." onkeydown="if(event.key==='Enter')doAddSource()">
+  <button class="paste-toggle" onclick="togglePaste()"><span id="pasteArrow">▸</span> Or paste transcript manually</button>
+  <div class="paste-area" id="pasteArea">
+    <textarea class="m-input" id="pasteTranscript" placeholder="Paste the full transcript text here..."></textarea>
+    <input class="m-input" id="pasteTitleInput" placeholder="Video title (optional)">
+    <div class="paste-hint">Copy from YouTube (··· → Show transcript) or youtubetotranscript.com</div>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button><button class="btn btn-primary" id="addSourceBtn" onclick="doAddSource()">Add Source</button></div>
+  <div class="fetch-status" id="addLoading" style="display:none"><div class="spinner"></div><span id="loadingText">Extracting transcript via Gemini...</span></div>
+</div></div>
+
+<!-- SETTINGS -->
+<div class="overlay" id="settingsModal"><div class="modal-box md">
+  <h3>Settings</h3>
+  <label>Gemini API Key</label>
+  <input type="password" class="m-input" id="sGeminiKey" placeholder="AIza...">
+  <div style="font-size:11px;color:var(--tx-3);margin:-10px 0 14px">Free at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--red);text-decoration:none">aistudio.google.com/apikey</a></div>
+  <label>OpenRouter API Key</label>
+  <input type="password" class="m-input" id="sApiKey" placeholder="sk-or-v1-...">
+  <label>Chat Model</label>
+  <select class="m-input" id="sModel">
+    <option value="anthropic/claude-3.5-haiku">Haiku</option>
+    <option value="anthropic/claude-sonnet-4" selected>Sonnet</option>
+    <option value="anthropic/claude-opus-4">Opus</option>
+  </select>
+  <label>Gemini Model</label>
+  <select class="m-input" id="sGeminiModel">
+    <option value="gemini-2.0-flash" selected>2.0 Flash — fast</option>
+    <option value="gemini-2.5-flash">2.5 Flash — better</option>
+    <option value="gemini-2.5-pro">2.5 Pro — best</option>
+  </select>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeSettings()">Cancel</button><button class="btn btn-primary" onclick="saveSettings()">Save</button></div>
+</div></div>
+
+<!-- RENAME -->
+<div class="overlay" id="renameModal"><div class="modal-box sm">
+  <h3>Rename Notebook</h3>
+  <input class="m-input" id="renameInput" placeholder="Notebook name" style="margin-top:12px" onkeydown="if(event.key==='Enter')doRename()">
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeRename()">Cancel</button><button class="btn btn-primary" onclick="doRename()">Save</button></div>
+</div></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   ██  EDIT THESE VALUES BEFORE PUSHING TO GITHUB  ██
+   ═══════════════════════════════════════════════════════ */
+const CONFIG = {
+  SUPABASE_URL: 'https://YOUR_PROJECT.supabase.co',     // ← your Supabase project URL
+  SUPABASE_KEY: 'YOUR_ANON_KEY',                        // ← your Supabase anon (public) key
+  PIN: '1234',                                          // ← your PIN
+  GEMINI_KEY: '',                                       // ← optional: hardcode Gemini key here
+  OPENROUTER_KEY: '',                                   // ← optional: hardcode OpenRouter key here
+};
+/* ═══════════════════════════════════════════════════════ */
+
+/* ═══ SUPABASE CLIENT (minimal, no SDK needed) ═══ */
+const SB = {
+  headers() {
+    return {
+      'apikey': CONFIG.SUPABASE_KEY,
+      'Authorization': `Bearer ${CONFIG.SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+    };
+  },
+  async get() {
+    const r = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks?select=*&order=created_at.desc`, { headers: this.headers() });
+    return r.json();
+  },
+  async upsert(nb) {
+    // Upsert by id
+    await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks`, {
+      method: 'POST',
+      headers: { ...this.headers(), 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({
+        id: nb.id,
+        name: nb.name,
+        data: JSON.stringify({ sources: nb.sources, chat: nb.chat }),
+        created_at: nb.createdAt,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  },
+  async remove(id) {
+    await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: this.headers(),
+    });
+  }
+};
+
+let notebooks=[], activeNbId=null, isLoading=false, syncTimer=null;
+
+/* ═══ PIN ═══ */
+let pinValue = '';
+function renderPinDots() {
+  const len = CONFIG.PIN.length;
+  document.getElementById('pinDots').innerHTML = Array.from({length:len}, (_,i) =>
+    `<div class="pin-dot ${i < pinValue.length ? 'filled' : ''}"></div>`
+  ).join('');
+}
+function pinKey(n) { if (pinValue.length < CONFIG.PIN.length) { pinValue += n; renderPinDots(); } }
+function pinClear() { pinValue = ''; renderPinDots(); }
+function pinSubmit() {
+  if (pinValue === CONFIG.PIN) {
+    document.getElementById('pinScreen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    sessionStorage.setItem('nb_auth', '1');
+    initApp();
+  } else {
+    document.querySelectorAll('.pin-dot').forEach(d => d.classList.add('wrong'));
+    setTimeout(() => { pinValue = ''; renderPinDots(); }, 500);
+  }
+}
+renderPinDots();
+
+// Auto-unlock if already authed this session
+if (sessionStorage.getItem('nb_auth') === '1') {
+  document.getElementById('pinScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  initApp();
+}
+
+/* ═══ CONFIRM ═══ */
+let _cCb=null;
+function customConfirm(msg,label){return new Promise(r=>{_cCb=r;document.getElementById('confirmMsg').textContent=msg;document.getElementById('confirmActionBtn').textContent=label||'Delete';document.getElementById('confirmOverlay').classList.add('show')})}
+function confirmResolve(v){document.getElementById('confirmOverlay').classList.remove('show');if(_cCb){_cCb(v);_cCb=null}}
+
+/* ═══ SETTINGS ═══ */
+function cfg(){return{
+  geminiKey: CONFIG.GEMINI_KEY || localStorage.getItem('nb_geminiKey')||'',
+  apiKey: CONFIG.OPENROUTER_KEY || localStorage.getItem('nb_apiKey')||'',
+  model: localStorage.getItem('nb_model')||'anthropic/claude-sonnet-4',
+  geminiModel: localStorage.getItem('nb_geminiModel')||'gemini-2.0-flash'
+}}
+function openSettings(){const c=cfg();document.getElementById('sGeminiKey').value=c.geminiKey;document.getElementById('sApiKey').value=c.apiKey;document.getElementById('sModel').value=c.model;document.getElementById('sGeminiModel').value=c.geminiModel;document.getElementById('settingsModal').classList.add('show')}
+function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
+function saveSettings(){localStorage.setItem('nb_geminiKey',document.getElementById('sGeminiKey').value.trim());localStorage.setItem('nb_apiKey',document.getElementById('sApiKey').value.trim());localStorage.setItem('nb_model',document.getElementById('sModel').value);localStorage.setItem('nb_geminiModel',document.getElementById('sGeminiModel').value);closeSettings()}
+
+/* ═══ HELPERS ═══ */
+function activeNb(){return notebooks.find(n=>n.id===activeNbId)}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function extractVideoId(i){if(!i)return null;i=i.trim();if(/^[a-zA-Z0-9_-]{11}$/.test(i))return i;const m=i.match(/(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
+function fmtMd(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/^[-•] (.+)$/gm,'<li>$1</li>').replace(/(<li>[\s\S]*?<\/li>)/g,'<ul>$1</ul>').replace(/<\/ul>\s*<ul>/g,'').replace(/^\d+\. (.+)$/gm,'<li>$1</li>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>').replace(/^/,'<p>').replace(/$/,'</p>').replace(/<p><\/p>/g,'')}
+function scrollBottom(){const a=document.getElementById('chatArea');requestAnimationFrame(()=>a.scrollTop=a.scrollHeight)}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,150)+'px'}
+
+/* ═══ SYNC ═══ */
+function showSync(){const el=document.getElementById('syncIndicator');el.classList.add('show');clearTimeout(syncTimer);syncTimer=setTimeout(()=>el.classList.remove('show'),2000)}
+
+async function saveAndSync(){
+  const nb=activeNb();
+  if(nb){try{await SB.upsert(nb);showSync()}catch(e){console.warn('Sync failed:',e)}}
+}
+
+async function loadFromSupabase(){
+  try{
+    const rows=await SB.get();
+    notebooks=rows.map(r=>{
+      const d=JSON.parse(r.data||'{}');
+      return{id:r.id,name:r.name,createdAt:r.created_at,sources:d.sources||[],chat:d.chat||[]};
+    });
+  }catch(e){
+    console.warn('Supabase load failed, using localStorage:',e);
+    try{notebooks=JSON.parse(localStorage.getItem('nb_data')||'[]')}catch{notebooks=[]}
+  }
+}
+
+/* ═══ GEMINI TRANSCRIPT ═══ */
+async function extractTranscriptViaGemini(videoId){
+  const c=cfg();
+  if(!c.geminiKey)throw new Error('Set your Gemini API key in Settings first.');
+  const ytUrl=`https://www.youtube.com/watch?v=${videoId}`;
+  const endpoint=`https://generativelanguage.googleapis.com/v1beta/models/${c.geminiModel}:generateContent?key=${c.geminiKey}`;
+
+  const resp=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{fileData:{fileUri:ytUrl,mimeType:'video/*'}},{text:'Extract the COMPLETE word-for-word transcript of this video. Output ONLY the transcript text — no timestamps, no speaker labels, no commentary, no formatting. Just the raw spoken words as plain text. If the video is in a non-English language, keep it in the original language.'}]}]})});
+  const data=await resp.json();
+  if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
+  const transcript=data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if(!transcript)throw new Error('Gemini returned no transcript.');
+
+  const titleResp=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{fileData:{fileUri:ytUrl,mimeType:'video/*'}},{text:'What is the exact title of this video? Reply with ONLY the title.'}]}]})});
+  const td=await titleResp.json();
+  const title=td.candidates?.[0]?.content?.parts?.[0]?.text?.trim()||'Untitled Video';
+  return{title,transcript:transcript.trim()};
+}
+
+/* ═══ NOTEBOOK CRUD ═══ */
+async function createNotebook(){const nb={id:Date.now().toString(),name:'Untitled Notebook',createdAt:new Date().toISOString(),sources:[],chat:[]};notebooks.unshift(nb);await SB.upsert(nb);selectNotebook(nb.id);renderNav();openRename()}
+async function deleteNotebook(id,e){e.stopPropagation();const ok=await customConfirm('Delete this notebook and all its sources?');if(!ok)return;notebooks=notebooks.filter(n=>n.id!==id);try{await SB.remove(id)}catch(e){}if(activeNbId===id)activeNbId=notebooks.length?notebooks[0].id:null;renderNav();renderMain()}
+function selectNotebook(id){activeNbId=id;renderNav();renderMain();if(window.innerWidth<=768)closeNav()}
+function openRename(){const nb=activeNb();if(!nb)return;document.getElementById('renameInput').value=nb.name;document.getElementById('renameModal').classList.add('show');setTimeout(()=>document.getElementById('renameInput').select(),100)}
+function closeRename(){document.getElementById('renameModal').classList.remove('show')}
+async function doRename(){const nb=activeNb();if(!nb)return;const v=document.getElementById('renameInput').value.trim();if(v){nb.name=v;await saveAndSync();renderNav();renderMain()}closeRename()}
+
+/* ═══ RENDER ═══ */
+function renderNav(){const el=document.getElementById('navList');if(!notebooks.length){el.innerHTML='<div class="no-nb">No notebooks yet</div>';return}el.innerHTML=notebooks.map(n=>`<div class="nav-item ${n.id===activeNbId?'active':''}" onclick="selectNotebook('${n.id}')"><span class="ni-icon">📓</span><span class="ni-title">${esc(n.name)}</span><span class="ni-count">${n.sources.length}</span><button class="ni-del" onclick="deleteNotebook('${n.id}',event)">✕</button></div>`).join('')}
+
+function renderMain(){
+  const nb=activeNb(),strip=document.getElementById('sourcesStrip'),input=document.getElementById('inputBar'),title=document.getElementById('topbarTitle'),actions=document.getElementById('topbarActions'),chat=document.getElementById('chatMessages');
+  if(!nb){strip.style.display='none';input.style.display='none';title.textContent='Create a notebook to begin';actions.innerHTML='';chat.innerHTML='<div class="empty-state"><div class="big-icon">📓</div><h2>YouTube Notebook</h2><p>Create a notebook, add YouTube videos, and chat with all of them at once.</p></div>';document.getElementById('tokenInfo').textContent='';return}
+  title.textContent=nb.name;
+  actions.innerHTML=`<button class="btn btn-ghost" onclick="openRename()">Rename</button><button class="btn btn-danger" onclick="clearChat()">Clear Chat</button>`;
+  strip.style.display='flex';
+  strip.innerHTML=nb.sources.map(s=>`<div class="source-chip"><img src="https://i.ytimg.com/vi/${s.videoId}/mqdefault.jpg" alt="" onerror="this.style.display='none'"><div class="sc-info"><div class="sc-title" title="${esc(s.title)}">${esc(s.title)}</div><div class="sc-meta">${Math.round(s.transcript.length/4).toLocaleString()} tok</div></div><button class="sc-del" onclick="removeSource('${s.id}')">✕</button></div>`).join('')+'<button class="add-chip" onclick="openAddModal()">+ Add</button>';
+  input.style.display='';
+  const tc=nb.sources.reduce((a,s)=>a+s.transcript.length,0);
+  document.getElementById('tokenInfo').textContent=`${nb.sources.length} source${nb.sources.length!==1?'s':''} · ~${Math.round(tc/4).toLocaleString()} tok`;
+  if(nb.chat.length===0){
+    chat.innerHTML=nb.sources.length===0?'<div class="empty-state"><div class="big-icon">🎬</div><h2>Add some sources</h2><p>Click "+ Add" to load YouTube videos.</p></div>':`<div class="empty-state"><div class="big-icon">✨</div><h2>${nb.sources.length} source${nb.sources.length>1?'s':''} loaded</h2><p>Ask anything about your videos.</p><div class="quick-actions"><button onclick="sendQuick('Summarize all sources briefly')">Summarize All</button><button onclick="sendQuick('What are the key insights?')">Key Insights</button><button onclick="sendQuick('Create a study guide')">Study Guide</button></div></div>`;
+  }else{chat.innerHTML=nb.chat.map(m=>m.role==='user'?`<div class="message message-user"><div class="msg-bubble">${esc(m.content)}</div></div>`:`<div class="message message-ai"><div class="msg-label">Notebook</div><div class="msg-content">${fmtMd(m.content)}</div></div>`).join('');scrollBottom()}
+}
+
+/* ═══ SOURCES ═══ */
+function openAddModal(){document.getElementById('addUrlInput').value='';document.getElementById('pasteTranscript').value='';document.getElementById('pasteTitleInput').value='';document.getElementById('pasteArea').classList.remove('show');document.getElementById('pasteArrow').textContent='▸';document.getElementById('addLoading').style.display='none';document.getElementById('addSourceBtn').disabled=false;document.getElementById('addModal').classList.add('show');setTimeout(()=>document.getElementById('addUrlInput').focus(),100)}
+function closeAddModal(){document.getElementById('addModal').classList.remove('show')}
+function togglePaste(){const a=document.getElementById('pasteArea'),ar=document.getElementById('pasteArrow');a.classList.toggle('show');ar.textContent=a.classList.contains('show')?'▾':'▸'}
+async function removeSource(srcId){const nb=activeNb();if(!nb)return;const ok=await customConfirm('Remove this source?','Remove');if(!ok)return;nb.sources=nb.sources.filter(s=>s.id!==srcId);await saveAndSync();renderMain()}
+
+async function doAddSource(){
+  const nb=activeNb();if(!nb)return;
+  const url=document.getElementById('addUrlInput').value.trim(),mt=document.getElementById('pasteTranscript').value.trim(),mTitle=document.getElementById('pasteTitleInput').value.trim(),btn=document.getElementById('addSourceBtn'),ld=document.getElementById('addLoading');
+  if(mt){const vid=extractVideoId(url)||'manual_'+Date.now();nb.sources.push({id:Date.now().toString(),videoId:vid,title:mTitle||(url?'YouTube Video':'Pasted Source'),transcript:mt,addedAt:new Date().toISOString()});await saveAndSync();closeAddModal();renderMain();return}
+  const videoId=extractVideoId(url);if(!videoId){alert('Invalid YouTube URL.');return}
+  if(nb.sources.find(s=>s.videoId===videoId)){alert('Already added.');return}
+  if(!cfg().geminiKey){alert('Set Gemini API key in Settings.');return}
+  btn.disabled=true;ld.style.display='flex';
+  try{const r=await extractTranscriptViaGemini(videoId);nb.sources.push({id:Date.now().toString(),videoId,title:r.title,transcript:r.transcript,addedAt:new Date().toISOString()});await saveAndSync();closeAddModal();renderMain()}
+  catch(err){alert('Failed: '+err.message)}finally{btn.disabled=false;ld.style.display='none'}
+}
+
+/* ═══ CHAT ═══ */
+function sendQuick(t){document.getElementById('chatInput').value=t;sendMessage()}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}
+async function clearChat(){const nb=activeNb();if(!nb)return;const ok=await customConfirm('Clear all chat history?','Clear');if(!ok)return;nb.chat=[];await saveAndSync();renderMain()}
+
+async function sendMessage(){
+  const input=document.getElementById('chatInput'),text=input.value.trim();if(!text||isLoading)return;
+  const nb=activeNb();if(!nb||!nb.sources.length)return;
+  const c=cfg();if(!c.apiKey){openSettings();return}
+  nb.chat.push({role:'user',content:text});input.value='';input.style.height='auto';renderMain();
+  isLoading=true;document.getElementById('sendBtn').disabled=true;
+  const typing=document.createElement('div');typing.className='message message-ai';typing.id='typing';typing.innerHTML='<div class="msg-label">Notebook</div><div class="typing-indicator"><span></span><span></span><span></span></div>';document.getElementById('chatMessages').appendChild(typing);scrollBottom();
+  try{
+    const srcCtx=nb.sources.map((s,i)=>`[SOURCE ${i+1}: "${s.title}"]\n${s.transcript}`).join('\n\n---\n\n');
+    const sys=`You are a knowledgeable notebook assistant. The user has loaded ${nb.sources.length} YouTube video transcript(s). Answer using ALL sources. Cite which video by title when relevant. Be concise but thorough.\n\nSOURCES:\n${srcCtx}`;
+    const recent=nb.chat.slice(-20).map(m=>({role:m.role==='user'?'user':'assistant',content:m.content}));
+    const resp=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${c.apiKey}`},body:JSON.stringify({model:c.model,messages:[{role:'system',content:sys},...recent],max_tokens:4096})});
+    const data=await resp.json();if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
+    nb.chat.push({role:'assistant',content:data.choices?.[0]?.message?.content||'No response.'});await saveAndSync();
+  }catch(err){nb.chat.push({role:'assistant',content:`**Error:** ${err.message}`})}
+  finally{isLoading=false;document.getElementById('sendBtn').disabled=false;const t=document.getElementById('typing');if(t)t.remove();renderMain()}
+}
+
+/* ═══ NAV ═══ */
+function toggleNav(){document.getElementById('navPanel').classList.toggle('open');document.getElementById('mobBackdrop').classList.toggle('show')}
+function closeNav(){document.getElementById('navPanel').classList.remove('open');document.getElementById('mobBackdrop').classList.remove('show')}
+
+/* ═══ INIT ═══ */
+async function initApp(){
+  await loadFromSupabase();
+  if(notebooks.length)activeNbId=notebooks[0].id;
+  renderNav();renderMain();
+  // Show settings if API keys not configured
+  if(!cfg().geminiKey||!cfg().apiKey)setTimeout(openSettings,400);
+}
+</script>
+</body>
+</html>
