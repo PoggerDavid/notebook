@@ -249,7 +249,7 @@ textarea.m-input{min-height:100px;resize:vertical;line-height:1.6;font-size:12px
 
 <script>
 /* ═══ CONFIG ═══ */
-const CONFIG={SUPABASE_URL:'https://knlrqwtyzzrfmdmqkqhy.supabase.co',SUPABASE_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtubHJxd3R5enpyZm1kbXFrcWh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMzMDc0OTAsImV4cCI6MjA0ODg4MzQ5MH0.23ZrU0KoUCq6TqXzKCdDGJJJvUXj5GxljQKP0lXD6GE'};
+const CONFIG={SUPABASE_URL:'https://wydcmldjdersvnfcqbev.supabase.co',SUPABASE_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5ZGNtbGRqZGVyc3ZuZmNxYmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1Mzg0NDEsImV4cCI6MjA4OTExNDQ0MX0.jM3HUiOAhUNx0iCoeRFipTlXDJcV-_bE16BWMuPSeQY'};
 let notebooks=[],activeNbId=null,pinBuffer='',isLoading=false,pinLocked=true;
 const activeNb=()=>notebooks.find(n=>n.id===activeNbId);
 const cfg=()=>({apiKey:localStorage.getItem('nb_apiKey')||'',model:localStorage.getItem('nb_model')||'openrouter/auto',useLocalTitle:localStorage.getItem('nb_useLocalTitle')==='true'});
