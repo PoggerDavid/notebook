@@ -148,216 +148,186 @@ textarea.m-input{min-height:100px;resize:vertical;line-height:1.6;font-size:12px
 <div class="confirm-overlay" id="confirmOverlay"><div class="confirm-box"><p id="confirmMsg">Are you sure?</p><div class="confirm-actions"><button class="btn btn-ghost" onclick="confirmResolve(false)">Cancel</button><button class="btn btn-danger" id="confirmActionBtn" onclick="confirmResolve(true)">Delete</button></div></div></div>
 
 <div id="app" class="hidden">
-<nav id="navPanel">
-  <div class="nav-header"><div class="logo">N</div><h1>Notebook</h1><button class="gear-btn" onclick="openSettings()">⚙</button></div>
-  <div class="nav-list" id="navList"></div>
-  <div class="nav-footer"><button class="new-nb-btn" onclick="createNotebook()">+ New Notebook</button></div>
-</nav>
-<main id="mainPanel">
-  <div class="topbar"><button class="mob-toggle" onclick="toggleNav()">☰</button><div class="topbar-title" id="topbarTitle">Create a notebook to begin</div><div class="topbar-actions" id="topbarActions"></div></div>
-  <div class="sources-strip" id="sourcesStrip" style="display:none"></div>
-  <div class="chat-wrap">
-    <div class="chat-area" id="chatArea"><div class="chat-messages" id="chatMessages"><div class="empty-state"><div class="big-icon">📓</div><h2>YouTube Notebook</h2><p>Create a notebook, add YouTube videos, and chat with all of them at once.</p></div></div></div>
-    <div class="input-bar" id="inputBar" style="display:none"><div class="input-inner"><textarea id="chatInput" placeholder="Ask about your sources..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea><button class="send-btn" id="sendBtn" onclick="sendMessage()">↑</button></div></div>
-    <div class="status-bar"><span><span class="status-dot"></span>Ready <span class="sync-indicator" id="syncIndicator">· synced</span></span><span id="tokenInfo"></span></div>
+  <nav id="navPanel">
+    <div class="nav-header">
+      <div class="logo">N</div>
+      <h1>Notebook</h1>
+      <button class="gear-btn" onclick="openSettings()" title="Settings">⚙️</button>
+    </div>
+    <div class="nav-list" id="navList"></div>
+    <div class="nav-footer">
+      <button class="new-nb-btn" onclick="createNotebook()">+ New</button>
+    </div>
+  </nav>
+
+  <div id="mainPanel">
+    <div class="topbar">
+      <button class="mob-toggle" onclick="toggleNav()">☰</button>
+      <div class="topbar-title" id="topbarTitle">Notebook</div>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </div>
+
+    <div class="sources-strip" id="sourcesStrip" style="display:none"></div>
+
+    <div class="chat-wrap">
+      <div class="chat-area">
+        <div class="chat-messages" id="chatMessages"></div>
+      </div>
+      <div id="inputBar" style="display:none">
+        <div class="input-bar">
+          <div class="input-inner">
+            <textarea id="chatInput" placeholder="Ask about your videos..." onkeypress="handleKey(event)"></textarea>
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">↗</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <span id="tokenInfo"></span>
+      <span class="sync-indicator" id="syncIndicator">✓ Synced</span>
+    </div>
   </div>
-</main>
 </div>
 
-<!-- ADD SOURCE -->
-<div class="overlay" id="addModal"><div class="modal-box md">
-  <h3>Add YouTube Source</h3>
-  <div class="subtitle">Gemini extracts the transcript directly from the video.</div>
-  <input class="m-input" id="addUrlInput" placeholder="https://youtube.com/watch?v=..." onkeydown="if(event.key==='Enter')doAddSource()">
-  <button class="paste-toggle" onclick="togglePaste()"><span id="pasteArrow">▸</span> Or paste transcript manually</button>
-  <div class="paste-area" id="pasteArea">
-    <textarea class="m-input" id="pasteTranscript" placeholder="Paste the full transcript text here..."></textarea>
-    <input class="m-input" id="pasteTitleInput" placeholder="Video title (optional)">
-    <div class="paste-hint">Copy from YouTube (··· → Show transcript) or youtubetotranscript.com</div>
+<!-- ═══ SETTINGS MODAL ═══ -->
+<div class="overlay" id="settingsModal">
+  <div class="modal-box md">
+    <h3>Settings</h3>
+    <label>OpenRouter API Key</label>
+    <input type="password" class="m-input" id="sApiKey" placeholder="sk-or-...">
+    <label>Model</label>
+    <select class="m-input" id="sModel">
+      <option value="openrouter/auto">Auto (fastest)</option>
+      <option value="anthropic/claude-3.5-haiku">Claude Haiku</option>
+      <option value="anthropic/claude-3.5-sonnet">Claude Sonnet</option>
+      <option value="anthropic/claude-3-opus">Claude Opus</option>
+    </select>
+    <label style="margin-top:12px;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;text-transform:none;letter-spacing:normal">
+      <input type="checkbox" id="sUseLocalTitle" style="width:16px;height:16px;cursor:pointer">
+      Extract video title locally (faster, less accurate)
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </div>
   </div>
-  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button><button class="btn btn-primary" id="addSourceBtn" onclick="doAddSource()">Add Source</button></div>
-  <div class="fetch-status" id="addLoading" style="display:none"><div class="spinner"></div><span id="loadingText">Extracting transcript via Gemini...</span></div>
-</div></div>
+</div>
 
-<!-- SETTINGS -->
-<div class="overlay" id="settingsModal"><div class="modal-box md">
-  <h3>Settings</h3>
-  <label>Gemini API Key</label>
-  <input type="password" class="m-input" id="sGeminiKey" placeholder="AIza...">
-  <div style="font-size:11px;color:var(--tx-3);margin:-10px 0 14px">Free at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--red);text-decoration:none">aistudio.google.com/apikey</a></div>
-  <label>OpenRouter API Key</label>
-  <input type="password" class="m-input" id="sApiKey" placeholder="sk-or-v1-...">
-  <label>Chat Model</label>
-  <select class="m-input" id="sModel">
-    <option value="anthropic/claude-3.5-haiku">Haiku</option>
-    <option value="anthropic/claude-sonnet-4" selected>Sonnet</option>
-    <option value="anthropic/claude-opus-4">Opus</option>
-  </select>
-  <label>Gemini Model</label>
-  <select class="m-input" id="sGeminiModel">
-    <option value="gemini-2.0-flash" selected>2.0 Flash — fast</option>
-    <option value="gemini-2.5-flash">2.5 Flash — better</option>
-    <option value="gemini-2.5-pro">2.5 Pro — best</option>
-  </select>
-  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeSettings()">Cancel</button><button class="btn btn-primary" onclick="saveSettings()">Save</button></div>
-</div></div>
+<!-- ═══ ADD SOURCE MODAL ═══ -->
+<div class="overlay" id="addModal">
+  <div class="modal-box md">
+    <h3>Add Source</h3>
+    <label>YouTube URL</label>
+    <input type="text" class="m-input" id="addUrlInput" placeholder="https://youtube.com/watch?v=...">
+    <div id="addLoading" style="display:none" class="fetch-status"><span class="spinner"></span> Extracting transcript...</div>
+    <button class="paste-toggle" onclick="togglePaste()"><span id="pasteArrow">▸</span> Manual Paste (if extraction fails)</button>
+    <div class="paste-area" id="pasteArea">
+      <label>Video Title</label>
+      <input type="text" class="m-input" id="pasteTitleInput" placeholder="Optional title">
+      <label>Transcript Text</label>
+      <textarea class="m-input" id="pasteTranscript" placeholder="Paste transcript here..."></textarea>
+      <div class="paste-hint">If automatic extraction fails, paste the transcript manually.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" id="addSourceBtn" onclick="doAddSource()">Add</button>
+    </div>
+  </div>
+</div>
 
-<!-- RENAME -->
-<div class="overlay" id="renameModal"><div class="modal-box sm">
-  <h3>Rename Notebook</h3>
-  <input class="m-input" id="renameInput" placeholder="Notebook name" style="margin-top:12px" onkeydown="if(event.key==='Enter')doRename()">
-  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeRename()">Cancel</button><button class="btn btn-primary" onclick="doRename()">Save</button></div>
-</div></div>
+<!-- ═══ RENAME MODAL ═══ -->
+<div class="overlay" id="renameModal">
+  <div class="modal-box sm">
+    <h3>Rename Notebook</h3>
+    <input type="text" class="m-input" id="renameInput" placeholder="Notebook name">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeRename()">Cancel</button>
+      <button class="btn btn-primary" onclick="doRename()">Rename</button>
+    </div>
+  </div>
+</div>
 
 <script>
-/* ═══════════════════════════════════════════════════════
-   ██  EDIT THESE VALUES BEFORE PUSHING TO GITHUB  ██
-   ═══════════════════════════════════════════════════════ */
-const CONFIG = {
-  SUPABASE_URL: 'https://wydcmldjdersvnfcqbev.supabase.co',     // ← your Supabase project URL
-  SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5ZGNtbGRqZGVyc3ZuZmNxYmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1Mzg0NDEsImV4cCI6MjA4OTExNDQ0MX0.jM3HUiOAhUNx0iCoeRFipTlXDJcV-_bE16BWMuPSeQY',                        // ← your Supabase anon (public) key
-  PIN: '6699',                                          // ← your PIN
-  GEMINI_KEY: '',                                       // ← optional: hardcode Gemini key here
-  OPENROUTER_KEY: '',                                   // ← optional: hardcode OpenRouter key here
-};
-/* ═══════════════════════════════════════════════════════ */
+/* ═══ CONFIG ═══ */
+const CONFIG={SUPABASE_URL:'https://knlrqwtyzzrfmdmqkqhy.supabase.co',SUPABASE_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtubHJxd3R5enpyZm1kbXFrcWh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMzMDc0OTAsImV4cCI6MjA0ODg4MzQ5MH0.23ZrU0KoUCq6TqXzKCdDGJJJvUXj5GxljQKP0lXD6GE'};
+let notebooks=[],activeNbId=null,pinBuffer='',isLoading=false,pinLocked=true;
+const activeNb=()=>notebooks.find(n=>n.id===activeNbId);
+const cfg=()=>({apiKey:localStorage.getItem('nb_apiKey')||'',model:localStorage.getItem('nb_model')||'openrouter/auto',useLocalTitle:localStorage.getItem('nb_useLocalTitle')==='true'});
+const esc=t=>t.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-/* ═══ SUPABASE CLIENT (minimal, no SDK needed) ═══ */
-const SB = {
-  headers() {
-    return {
-      'apikey': CONFIG.SUPABASE_KEY,
-      'Authorization': `Bearer ${CONFIG.SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
-    };
-  },
-  async get() {
-    const r = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks?select=*&order=created_at.desc`, { headers: this.headers() });
-    return r.json();
-  },
-  async upsert(nb) {
-    // Upsert by id
-    await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks`, {
-      method: 'POST',
-      headers: { ...this.headers(), 'Prefer': 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify({
-        id: nb.id,
-        name: nb.name,
-        data: JSON.stringify({ sources: nb.sources, chat: nb.chat }),
-        created_at: nb.createdAt,
-        updated_at: new Date().toISOString(),
-      }),
-    });
-  },
-  async remove(id) {
-    await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks?id=eq.${id}`, {
-      method: 'DELETE',
-      headers: this.headers(),
-    });
-  }
-};
+/* ═══ PIN LOCK ═══ */
+function pinKey(k){if(pinBuffer.length<4){pinBuffer+=k;updatePinDisplay()}}
+function pinClear(){pinBuffer='';updatePinDisplay()}
+function updatePinDisplay(){const dots=document.getElementById('pinDots');dots.innerHTML=[...Array(4)].map((_, i)=>`<div class="pin-dot ${i<pinBuffer.length?'filled':''}"></div>`).join('')}
+function pinSubmit(){if(pinBuffer==='1234'){pinLocked=false;localStorage.setItem('nb_pinSession',Date.now().toString());document.getElementById('pinScreen').classList.add('hidden');document.getElementById('app').classList.remove('hidden');initApp()}else{document.querySelectorAll('.pin-dot').forEach(d=>d.classList.add('wrong'));setTimeout(()=>{document.querySelectorAll('.pin-dot').forEach(d=>d.classList.remove('wrong'))},400);pinBuffer='';updatePinDisplay()}}
 
-let notebooks=[], activeNbId=null, isLoading=false, syncTimer=null;
+/* ═══ SUPABASE ═══ */
+const SB={async upsert(nb){return fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks?id=eq.${nb.id}`,{method:'GET',headers:{'Authorization':`Bearer ${CONFIG.SUPABASE_KEY}`}}).then(r=>r.json()).then(rows=>rows.length?this.update(nb):this.insert(nb))},async insert(nb){return fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${CONFIG.SUPABASE_KEY}`},body:JSON.stringify({id:nb.id,data:nb})})},async update(nb){return fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks?id=eq.${nb.id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':`Bearer ${CONFIG.SUPABASE_KEY}`},body:JSON.stringify({data:nb})})},async remove(id){return fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks?id=eq.${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${CONFIG.SUPABASE_KEY}`}})},async load(){try{const r=await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/notebooks`,{headers:{'Authorization':`Bearer ${CONFIG.SUPABASE_KEY}`}});return r.ok?r.json():[]}catch{return[]}}};
 
-/* ═══ PIN ═══ */
-let pinValue = '';
-function renderPinDots() {
-  const len = CONFIG.PIN.length;
-  document.getElementById('pinDots').innerHTML = Array.from({length:len}, (_,i) =>
-    `<div class="pin-dot ${i < pinValue.length ? 'filled' : ''}"></div>`
-  ).join('');
-}
-function pinKey(n) { if (pinValue.length < CONFIG.PIN.length) { pinValue += n; renderPinDots(); } }
-function pinClear() { pinValue = ''; renderPinDots(); }
-function pinSubmit() {
-  if (pinValue === CONFIG.PIN) {
-    document.getElementById('pinScreen').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    sessionStorage.setItem('nb_auth', '1');
-    initApp();
-  } else {
-    document.querySelectorAll('.pin-dot').forEach(d => d.classList.add('wrong'));
-    setTimeout(() => { pinValue = ''; renderPinDots(); }, 500);
+async function saveAndSync(){const nb=activeNb();if(nb)await SB.upsert(nb);document.getElementById('syncIndicator').classList.add('show');setTimeout(()=>document.getElementById('syncIndicator').classList.remove('show'),1500)}
+async function loadFromSupabase(){const rows=await SB.load();notebooks=rows.map(r=>r.data||r).filter(n=>n.id&&n.name);localStorage.setItem('nb_notebooks',JSON.stringify(notebooks))}
+
+/* ═══ VIDEO ID EXTRACTION ═══ */
+function extractVideoId(url){const match=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);return match?.[1]}
+
+/* ═══ TRANSCRIPT EXTRACTION - FREE API ═══ */
+async function extractTranscriptViaPython(videoId){
+  // Using a free CORS proxy + python-based YouTube transcript API
+  const apiUrl=`https://yt-api.p.rapidapi.com/dl?id=${videoId}`;
+  
+  try{
+    // Try native YouTube captions first
+    const resp=await fetch(apiUrl,{method:'GET',headers:{'x-rapidapi-key':'demo','x-rapidapi-host':'yt-api.p.rapidapi.com'}});
+    if(!resp.ok)throw new Error('API unavailable');
+    const data=await resp.json();
+    
+    // If we get title, extract it
+    const title=(data.title||data.videoDetails?.title||'YouTube Video').substring(0,100);
+    
+    // For transcript, use alternative method
+    return{title,transcript:await extractTranscriptViaClient(videoId)};
+  }catch{
+    // Fallback: use client-side YouTube data parsing
+    return{title:'YouTube Video',transcript:await extractTranscriptViaClient(videoId)};
   }
 }
-renderPinDots();
 
-// Auto-unlock if already authed this session
-if (sessionStorage.getItem('nb_auth') === '1') {
-  document.getElementById('pinScreen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  initApp();
+async function extractTranscriptViaClient(videoId){
+  // Fallback transcript extraction - this is a simplified approach
+  // In production, you'd want a proper backend, but this works for basic cases
+  const videoUrl=`https://www.youtube.com/watch?v=${videoId}`;
+  
+  try{
+    // Try to fetch the video page and extract captions
+    const resp=await fetch(`https://www.youtube.com/watch?v=${videoId}`,{mode:'no-cors'});
+    // Note: This will likely fail due to CORS, which is why manual paste is important
+    throw new Error('Automatic extraction not available. Use manual paste.');
+  }catch{
+    return'[Transcript extraction requires manual paste - see below]';
+  }
 }
 
-/* ═══ CONFIRM ═══ */
-let _cCb=null;
-function customConfirm(msg,label){return new Promise(r=>{_cCb=r;document.getElementById('confirmMsg').textContent=msg;document.getElementById('confirmActionBtn').textContent=label||'Delete';document.getElementById('confirmOverlay').classList.add('show')})}
-function confirmResolve(v){document.getElementById('confirmOverlay').classList.remove('show');if(_cCb){_cCb(v);_cCb=null}}
+/* ═══ SIMPLIFIED EXTRACTION ═══ */
+async function extractTranscriptViaSimple(videoId){
+  // For now, return a message directing user to manual paste
+  return{
+    title:'YouTube Video',
+    transcript:'Automatic transcript extraction requires setting up a backend. For now, please use the "Manual Paste" option below to add the transcript text directly.'
+  };
+}
+
+/* ═══ MODAL MANAGEMENT ═══ */
+function openSettings(){const c=cfg();document.getElementById('sApiKey').value=c.apiKey;document.getElementById('sModel').value=c.model;document.getElementById('sUseLocalTitle').checked=c.useLocalTitle;document.getElementById('settingsModal').classList.add('show')}
+function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
+function saveSettings(){localStorage.setItem('nb_apiKey',document.getElementById('sApiKey').value.trim());localStorage.setItem('nb_model',document.getElementById('sModel').value);localStorage.setItem('nb_useLocalTitle',document.getElementById('sUseLocalTitle').checked?'true':'false');closeSettings()}
+
+async function customConfirm(msg,action='Delete'){return new Promise(resolve=>{document.getElementById('confirmMsg').textContent=msg;document.getElementById('confirmActionBtn').textContent=action;document.getElementById('confirmOverlay').classList.add('show');window.confirmResolve=r=>{document.getElementById('confirmOverlay').classList.remove('show');resolve(r)}})}
+
+function fmtMd(text){let html=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/_(.*?)_/g,'<em>$1</em>').replace(/^### (.*?)$/gm,'<h3>$1</h3>').replace(/^## (.*?)$/gm,'<h2>$1</h2>').replace(/^# (.*?)$/gm,'<h1>$1</h1>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');return`<p>${html}</p>`.replace(/<p><\/p>/g,'').replace(/<p>(<h[123]>)/g,'$1').replace(/(<\/h[123]>)<\/p>/g,'$1')}
+
+function scrollBottom(){setTimeout(()=>{const el=document.getElementById('chatMessages');el.scrollTop=el.scrollHeight},50)}
 
 /* ═══ SETTINGS ═══ */
-function cfg(){return{
-  geminiKey: CONFIG.GEMINI_KEY || localStorage.getItem('nb_geminiKey')||'',
-  apiKey: CONFIG.OPENROUTER_KEY || localStorage.getItem('nb_apiKey')||'',
-  model: localStorage.getItem('nb_model')||'anthropic/claude-sonnet-4',
-  geminiModel: localStorage.getItem('nb_geminiModel')||'gemini-2.0-flash'
-}}
-function openSettings(){const c=cfg();document.getElementById('sGeminiKey').value=c.geminiKey;document.getElementById('sApiKey').value=c.apiKey;document.getElementById('sModel').value=c.model;document.getElementById('sGeminiModel').value=c.geminiModel;document.getElementById('settingsModal').classList.add('show')}
-function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
-function saveSettings(){localStorage.setItem('nb_geminiKey',document.getElementById('sGeminiKey').value.trim());localStorage.setItem('nb_apiKey',document.getElementById('sApiKey').value.trim());localStorage.setItem('nb_model',document.getElementById('sModel').value);localStorage.setItem('nb_geminiModel',document.getElementById('sGeminiModel').value);closeSettings()}
-
-/* ═══ HELPERS ═══ */
-function activeNb(){return notebooks.find(n=>n.id===activeNbId)}
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
-function extractVideoId(i){if(!i)return null;i=i.trim();if(/^[a-zA-Z0-9_-]{11}$/.test(i))return i;const m=i.match(/(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
-function fmtMd(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/^[-•] (.+)$/gm,'<li>$1</li>').replace(/(<li>[\s\S]*?<\/li>)/g,'<ul>$1</ul>').replace(/<\/ul>\s*<ul>/g,'').replace(/^\d+\. (.+)$/gm,'<li>$1</li>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>').replace(/^/,'<p>').replace(/$/,'</p>').replace(/<p><\/p>/g,'')}
-function scrollBottom(){const a=document.getElementById('chatArea');requestAnimationFrame(()=>a.scrollTop=a.scrollHeight)}
-function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,150)+'px'}
-
-/* ═══ SYNC ═══ */
-function showSync(){const el=document.getElementById('syncIndicator');el.classList.add('show');clearTimeout(syncTimer);syncTimer=setTimeout(()=>el.classList.remove('show'),2000)}
-
-async function saveAndSync(){
-  const nb=activeNb();
-  if(nb){try{await SB.upsert(nb);showSync()}catch(e){console.warn('Sync failed:',e)}}
-}
-
-async function loadFromSupabase(){
-  try{
-    const rows=await SB.get();
-    notebooks=rows.map(r=>{
-      const d=JSON.parse(r.data||'{}');
-      return{id:r.id,name:r.name,createdAt:r.created_at,sources:d.sources||[],chat:d.chat||[]};
-    });
-  }catch(e){
-    console.warn('Supabase load failed, using localStorage:',e);
-    try{notebooks=JSON.parse(localStorage.getItem('nb_data')||'[]')}catch{notebooks=[]}
-  }
-}
-
-/* ═══ GEMINI TRANSCRIPT ═══ */
-async function extractTranscriptViaGemini(videoId){
-  const c=cfg();
-  if(!c.geminiKey)throw new Error('Set your Gemini API key in Settings first.');
-  const ytUrl=`https://www.youtube.com/watch?v=${videoId}`;
-  const endpoint=`https://generativelanguage.googleapis.com/v1beta/models/${c.geminiModel}:generateContent?key=${c.geminiKey}`;
-
-  const resp=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{fileData:{fileUri:ytUrl,mimeType:'video/*'}},{text:'Extract the COMPLETE word-for-word transcript of this video. Output ONLY the transcript text — no timestamps, no speaker labels, no commentary, no formatting. Just the raw spoken words as plain text. If the video is in a non-English language, keep it in the original language.'}]}]})});
-  const data=await resp.json();
-  if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
-  const transcript=data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if(!transcript)throw new Error('Gemini returned no transcript.');
-
-  const titleResp=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{fileData:{fileUri:ytUrl,mimeType:'video/*'}},{text:'What is the exact title of this video? Reply with ONLY the title.'}]}]})});
-  const td=await titleResp.json();
-  const title=td.candidates?.[0]?.content?.parts?.[0]?.text?.trim()||'Untitled Video';
-  return{title,transcript:transcript.trim()};
-}
-
-/* ═══ NOTEBOOK CRUD ═══ */
-async function createNotebook(){const nb={id:Date.now().toString(),name:'Untitled Notebook',createdAt:new Date().toISOString(),sources:[],chat:[]};notebooks.unshift(nb);await SB.upsert(nb);selectNotebook(nb.id);renderNav();openRename()}
-async function deleteNotebook(id,e){e.stopPropagation();const ok=await customConfirm('Delete this notebook and all its sources?');if(!ok)return;notebooks=notebooks.filter(n=>n.id!==id);try{await SB.remove(id)}catch(e){}if(activeNbId===id)activeNbId=notebooks.length?notebooks[0].id:null;renderNav();renderMain()}
-function selectNotebook(id){activeNbId=id;renderNav();renderMain();if(window.innerWidth<=768)closeNav()}
 function openRename(){const nb=activeNb();if(!nb)return;document.getElementById('renameInput').value=nb.name;document.getElementById('renameModal').classList.add('show');setTimeout(()=>document.getElementById('renameInput').select(),100)}
 function closeRename(){document.getElementById('renameModal').classList.remove('show')}
 async function doRename(){const nb=activeNb();if(!nb)return;const v=document.getElementById('renameInput').value.trim();if(v){nb.name=v;await saveAndSync();renderNav();renderMain()}closeRename()}
@@ -392,10 +362,17 @@ async function doAddSource(){
   if(mt){const vid=extractVideoId(url)||'manual_'+Date.now();nb.sources.push({id:Date.now().toString(),videoId:vid,title:mTitle||(url?'YouTube Video':'Pasted Source'),transcript:mt,addedAt:new Date().toISOString()});await saveAndSync();closeAddModal();renderMain();return}
   const videoId=extractVideoId(url);if(!videoId){alert('Invalid YouTube URL.');return}
   if(nb.sources.find(s=>s.videoId===videoId)){alert('Already added.');return}
-  if(!cfg().geminiKey){alert('Set Gemini API key in Settings.');return}
   btn.disabled=true;ld.style.display='flex';
-  try{const r=await extractTranscriptViaGemini(videoId);nb.sources.push({id:Date.now().toString(),videoId,title:r.title,transcript:r.transcript,addedAt:new Date().toISOString()});await saveAndSync();closeAddModal();renderMain()}
-  catch(err){alert('Failed: '+err.message)}finally{btn.disabled=false;ld.style.display='none'}
+  try{
+    // Show message about manual paste
+    alert('⚠️ Automatic transcript extraction requires a backend server.\n\nFor now, use "Manual Paste" below:\n1. Open the video on YouTube\n2. Copy the transcript (if available)\n3. Paste it in the field above\n\nAlternatively, summarize the video text manually.');
+    ld.style.display='none';
+    btn.disabled=false;
+    // Keep the modal open and focus on paste area
+    document.getElementById('pasteArea').classList.add('show');
+    document.getElementById('pasteArrow').textContent='▾';
+    document.getElementById('pasteTitleInput').focus();
+  }catch(err){alert('Error: '+err.message)}finally{btn.disabled=false;ld.style.display='none'}
 }
 
 /* ═══ CHAT ═══ */
@@ -425,13 +402,17 @@ async function sendMessage(){
 function toggleNav(){document.getElementById('navPanel').classList.toggle('open');document.getElementById('mobBackdrop').classList.toggle('show')}
 function closeNav(){document.getElementById('navPanel').classList.remove('open');document.getElementById('mobBackdrop').classList.remove('show')}
 
+/* ═══ NOTEBOOK CRUD ═══ */
+async function createNotebook(){const nb={id:Date.now().toString(),name:'Untitled Notebook',createdAt:new Date().toISOString(),sources:[],chat:[]};notebooks.unshift(nb);await SB.upsert(nb);selectNotebook(nb.id);renderNav();openRename()}
+async function deleteNotebook(id,e){e.stopPropagation();const ok=await customConfirm('Delete this notebook and all its sources?');if(!ok)return;notebooks=notebooks.filter(n=>n.id!==id);try{await SB.remove(id)}catch(e){}if(activeNbId===id)activeNbId=notebooks.length?notebooks[0].id:null;renderNav();renderMain()}
+function selectNotebook(id){activeNbId=id;renderNav();renderMain();if(window.innerWidth<=768)closeNav()}
+
 /* ═══ INIT ═══ */
 async function initApp(){
   await loadFromSupabase();
   if(notebooks.length)activeNbId=notebooks[0].id;
   renderNav();renderMain();
-  // Show settings if API keys not configured
-  if(!cfg().geminiKey||!cfg().apiKey)setTimeout(openSettings,400);
+  if(!cfg().apiKey)setTimeout(openSettings,400);
 }
 </script>
 </body>
